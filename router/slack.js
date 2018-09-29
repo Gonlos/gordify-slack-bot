@@ -11,8 +11,8 @@ router.post("/auth", (req, res, next) => {
   res.json({challenge});
 });
 router.post("/event", (req, res, next) => {
-  if(req.query.challenge)res.json({challenge.req.query.challenge})
   console.log(req.body)
+  if(req.body.challenge) res.json({challenge:req.body.challenge})
   const {event}=req.body
   res.json({text:`I'm received the ${event.type} event width this text :"${event.text}"`});
 });
