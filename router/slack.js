@@ -6,18 +6,18 @@ router.get("/", (req, res, next) => {
   res.json({ text: "Hello, world!" });
 });
 router.post("/auth", (req, res, next) => {
-  const {challenge}=req.body
   console.log(req.body)
+  const {challenge}=req.body
   res.json({challenge});
 });
 router.post("/event", (req, res, next) => {
-  const {challenge}=req.body
   console.log(req.body)
-  res.json({text:`I'm received the ${command} event`});
+  const {event}=req.body
+  res.json({text:`I'm received the ${event.type} event width this text :"${event.text}"`});
 });
 router.post("/command",(req,res,next)=>{
-  const {command} = req.body 
   console.log(req.body)
+  const {command} = req.body 
   res.json({text:`I'm received the ${command} command`})
 })
 
