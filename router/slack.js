@@ -11,14 +11,20 @@ router.post("/auth", (req, res, next) => {
   res.json({challenge});
 });
 router.post("/event", (req, res, next) => {
+  if(req.query.challenge)res.json({challenge.req.query.challenge})
   console.log(req.body)
   const {event}=req.body
   res.json({text:`I'm received the ${event.type} event width this text :"${event.text}"`});
 });
-router.post("/command",(req,res,next)=>{
+router.post("/start",(req,res,next)=>{
   console.log(req.body)
   const {command} = req.body 
-  res.json({text:`I'm received the ${command} command`})
+  res.json({text:`I'm received the /start command`})
+})
+router.post("/end",(req,res,next)=>{
+  console.log(req.body)
+  const {command} = req.body 
+  res.json({text:`I'm received the /end command`})
 })
 
 module.exports = router;
