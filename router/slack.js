@@ -10,13 +10,15 @@ router.post("/auth", (req, res, next) => {
   console.log(req.body)
   res.json({challenge});
 });
-router.post("/", (req, res, next) => {
+router.post("/event", (req, res, next) => {
   const {challenge}=req.body
   console.log(req.body)
-  res.json({text:"algo recibo"});
+  res.json({text:`I'm received the ${command} event`});
 });
-router.post("/start",(req,res,next)=>{
-  res.json({text:"Esto es para empezar"})
+router.post("/command",(req,res,next)=>{
+  const {command} = req.body 
+  console.log(req.body)
+  res.json({text:`I'm received the ${command} command`})
 })
 
 module.exports = router;
