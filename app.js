@@ -5,8 +5,13 @@ const app = express();
 
 
 app.use(bodyParser.json());
-
-
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use((req)=>{
+  console.log("-------------------")
+  console.log("body -> ",req.body)
+  console.log("params -> ",req.params)
+  console.log("query -> ",req.query)
+});
 const slack = require("./router/slack");
 app.use("/slack", slack);
 
