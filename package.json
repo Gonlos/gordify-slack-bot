@@ -1,0 +1,27 @@
+{
+  "name": "gordify-slack-bot",
+  "version": "1.0.0",
+  "description": "Slack bot, which splites people to go to lunch, for the cabify code test ",
+  "main": "index.js",
+  "scripts": {
+    "start": "node bin/www",
+    "dev": "nodemon bin/www",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Gonlos/gordify-slak-bot.git"
+  },
+  "keywords": [
+    "gordify"
+  ],
+  "author": "Gonlos",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Gonlos/gordify-slak-bot/issues"
+  },
+  "homepage": "https://github.com/Gonlos/gordify-slak-bot#readme",
+  "dependencies": {
+    "express": "^4.16.3"
+  }
+}
