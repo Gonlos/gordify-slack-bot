@@ -11,6 +11,7 @@ app.use((req)=>{
   console.log("body -> ",req.body)
   console.log("params -> ",req.params)
   console.log("query -> ",req.query)
+  next()
 });
 const slack = require("./router/slack");
 app.use("/slack", slack);
