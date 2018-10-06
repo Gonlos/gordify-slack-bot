@@ -4,12 +4,39 @@ const botEscapedName = "<@UD3NJ1CKU>";
 const Slack = require('../helpers/slackMethods')
 
 router.post("/", (req, res, next) => {
+  /*  interactive_message
+      dialog_cancellation
+      dialog_submission
+      message_action  */
   const {payload} = req.body;
   console.log(payload)
   const {type,token,team,user,channel,response_url}=payload
   console.log({type,token,team,user,channel,response_url})
   
   res.status(200).end()
+  switch (type) {
+    case "interactive_message":console.log(interactive_message);break;
+    case "dialog_submission":{
+      const{submission}=payload
+      const config={
+        channel:submission.channel || 'general',
+        days:submission.days || 'thursday',
+        time:submission.time || '10:00',
+        duration:submission.duration || 2
+      }
+      Slack.response(response_url,{
+        text:`Has configurado el bot con <#${config.channel}> ${config.days} ${config.time}`
+      })
+      break;}
+    case "dialog_cancellation":{
+      Slack.response(response_url,{
+        text:"Has cancelado la configuración"
+      });
+      break;
+    }
+    case "message_action":console.log(message_action);break;
+    default:break;
+  }
   return
   let action =""
 
