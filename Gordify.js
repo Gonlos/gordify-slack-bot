@@ -21,6 +21,7 @@ class Gordify {
       console.log("Error find",e)
     })
   }
+
   createBot(){
     SlackBot.create({
       name:this.name,
@@ -34,6 +35,7 @@ class Gordify {
       console.log(this)
     })
   }
+
   WakeUpBot(bot){
     this.name = bot.name
     this.channel = bot.channel
@@ -43,9 +45,24 @@ class Gordify {
     console.log("whakeUp",bot)
     console.log("whakeUp",this)
   }
+
   start(){}
+  
   stop(){}
-  makeGroups(){}
+  
+  makeGroups(users) {
+    users.sort(() => Math.random() - 0.5)
+    nUsers = users.length
+    nGroups = Math.ceil(users.length / 7)
+    groups = []
+    for (i = 0; i < nGroups; i++) {
+      groups.push([])
+    }
+    for (i = 0; i < nUsers; i++) {
+      groups[i % (nGroups)].push(users[i])
+    }
+    return groups
+  }
 }
 
 module.exports = Gordify
