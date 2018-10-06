@@ -8,27 +8,9 @@ router.post("/", (req, res, next) => {
   console.log(payload)
   const {type,token,team,user,channel,response_url}=payload
   console.log({type,token,team,user,channel,response_url})
-  Slack.groups("create",{name:"Prueba5",validate:false})
-  .then((e)=>{
-    console.log(e)
-    if(e.data.ok){
-      return Slack.groups('setPurpose',{channel:e.data.group.id,purpose:"Proposito del canal"})
-    }
-    throw e
-  })
-  .then()
-  .catch(e=>console.log("create error",e.data))
+  
   res.status(200).end()
   return
-
-  /*
-      interactive_message
-      dialog_cancellation
-      dialog_submission
-      message_action
-
-  */
-
   let action =""
 
   if(payload.type=="message" && payload.message.bot_id){
@@ -129,35 +111,57 @@ router.post("/end", (req, res, next) => {
   res.json({ text: `I'm received the /end command` });
 });
 router.post("/config", (req, res, next) => {
+  console.log("/config");
+  res.status(200).end()
+  
   const { trigger_id } = req.body;
-  let dialog = {
-    callback_id: "ryde-46e2b0",
-    title: "Request a Ride",
-    submit_label: "Request",
-    notify_on_cancel: true,
-    state: "Limo",
-    elements: [
-      {
-        type: "select",
-        label: "Channel",
-        placeholder:"Chose channel tu run",
-        name: "chanel",
-        data_source:"conversations"
-      },
-      {
-        type: "text",
-        label: "Date to start",
-        placeholder:"Date to start YYYY-MM-DD - Default today",
-        name: "date",
-        optional:true
-      }
-    ]
-  };
   let message = {
     trigger_id,
-    dialog
+    dialog: {
+      callback_id: "config",
+      title: "Config bot",
+      submit_label: "Request",
+      notify_on_cancel: true,
+      state: "Limo",
+      elements: [
+        {
+          type: "select",
+          label: "Channel",
+          placeholder: "Choose channel",
+          name: "channel",
+          data_source: "channels"
+        },{
+          type: "text",
+          label: "Days to go lunch",
+          placeholder: "Days of the week separated by commas",
+          name: "days",
+          optional: true
+        },{
+          type: "text",
+          label: "Time",
+          placeholder: "Launch time",
+          name: "time",
+          optional: true
+        },{
+          type: "text",
+          label: "Duration",
+          placeholder: "Time to join in hours",
+          name: "duration",
+          optional: true
+        }
+      ]
+    }
   };
-  console.log("/config");
+  
+  Slack.dialog("open",message)
+    .then(r => {
+      console.log("open dialog", r.data);
+    })
+    .catch(e => console.log("open dialog error", e.data));
+});
+
+module.exports = router;
+  
   // axios
   //   .post("https://slack.com/api/chat.postMessage", {
   //     channel: "random",
@@ -185,12 +189,4 @@ router.post("/config", (req, res, next) => {
   //       }
   //     ]
   // })
-  Slack.dialog.open(message)
-    .then(r => {
-      console.log("/start", r.data);
-      res.json({ text: `I'm received the /start command` });
-    })
-    .catch(e => console.log("/start", e.data));
-});
 
-module.exports = router;
