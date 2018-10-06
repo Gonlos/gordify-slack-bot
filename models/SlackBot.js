@@ -18,4 +18,5 @@ const slackBotSchema = new Schema(
 );
 
 const SlackBot = mongosse.model("SlackBot", slackBotSchema);
+
 module.exports = SlackBot;
