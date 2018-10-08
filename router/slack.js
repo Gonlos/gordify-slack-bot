@@ -1,86 +1,117 @@
 const express = require("express");
 const router = express.Router();
-const botEscapedName = "<@UD3NJ1CKU>";
-const Slack = require('../helpers/slackMethods')
+// const botEscapedName = "<@UD3NJ1CKU>";
+const Slack = require("../helpers/slackMethods");
+const Gordify = require("../Gordify");
+const { yesMessage, noMessage } = require("../helpers/messages");
+const { shortDayToLong,daysOfWeek } = require("../helpers/util");
 
+const gordify = new Gordify();
 router.post("/", (req, res, next) => {
   /*  interactive_message
       dialog_cancellation
       dialog_submission
       message_action  */
-  const {payload} = req.body;
-  console.log(payload)
-  const {type,token,team,user,channel,response_url}=payload
-  console.log({type,token,team,user,channel,response_url})
+  const { payload } = req.body;
+  console.log(payload);
+  const {
+    type,
+    token,
+    team,
+    user,
+    channel,
+    response_url,
+    callback_id
+  } = payload;
+  console.log({ type, token, team, user, channel, response_url, callback_id });
+
   
-  res.status(200).end()
   switch (type) {
-    case "interactive_message":console.log(interactive_message);break;
-    case "dialog_submission":{
-      const{submission}=payload
-      const config={
-        channel:submission.channel || 'general',
-        days:submission.days || 'thursday',
-        time:submission.time || '10:00',
-        duration:submission.duration || 2
+    case "interactive_message": {
+      res.status(200).end();
+      if (payload.actions[0].name != "goLunch") return;
+      let action = payload.actions[0].value;
+      let error="a",message
+      gordify
+        .findOrCreateUser({ slackId: user.id, name: user.name })
+        .then(userDB => {
+          if (action == "no" || action == "notNow") {
+            message = noMessage;
+            error="You were not joined"
+            return gordify.removeUserLunch(userDB.id,callback_id)
+          }
+          if (action == "yes" || action == "nowYes") {
+            message = yesMessage;
+            error="You were already joined"
+            return gordify.addUserLunch(userDB.id,callback_id)
+          }
+        })
+        .then(lunch => {
+          if (lunch) {
+            message.user = user.id;
+            message.channel = user.id;
+            message.attachments[0].callback_id = callback_id;
+
+            if (action == "no" || action == "yes") {
+              return Slack.chat("postMessage", message);
+            } else if (action == "notNow" || action == "nowYes") {
+              return Slack.response(response_url, message);
+            }
+          } else {
+            console.log(error)
+            return Promise.reject({error})
+          }
+        })
+        .then(r => console.log("int_mess", r.data))
+        .catch(e => next({user:user.id,channel:channel.id,text:e.error}))
+        .then(e => console.log(e))
+        .catch(e => console.log(e))
+      break;
+    }
+    case "dialog_submission": {
+      const { submission } = payload;
+      let daysLong=[],error=false
+      if(submission.days!="") {
+        error=submission.days.split(',').some(d=>{
+          day=shortDayToLong(d)
+          if(day==""){
+            return true
+          }
+          daysLong.push(day)
+        })
       }
-      Slack.response(response_url,{
-        text:`Has configurado el bot con <#${config.channel}> ${config.days} ${config.time}`
-      })
-      break;}
-    case "dialog_cancellation":{
-      Slack.response(response_url,{
-        text:"Has cancelado la configuración"
+      console.log(error)
+      if(error){
+        res.json({errors:[{name:"days",error:"Some of the days is not right"}]})
+        return
+      }
+      res.status(200).end();
+      const config = {
+        channel: submission.channel || "general",
+        days: daysLong.toString() || "thursday"
+        // ,
+        // time: submission.time || "10:00",
+        // duration: submission.duration || 2
+      };
+      Slack.response(response_url, {
+        text: `You have set the robot on the channel <#${config.channel}> at 10:00 on the following days of the week: ${config.days}`
       });
       break;
     }
-    case "message_action":console.log(message_action);break;
-    default:break;
+    case "dialog_cancellation": {
+      res.status(200).end();
+      Slack.response(response_url, {
+        text: "Has cancelado la configuración"
+      });
+      break;
+    }
+    case "message_action":
+      res.status(200).end();
+      console.log(message_action);
+      break;
+    default:
+      break;
   }
-  return
-  let action =""
-
-  if(payload.type=="message" && payload.message.bot_id){
-    console.log("bot message")
-    return
-  }
-  if(payload.type=="message_action"){
-    action=payload.callback_id
-  }
-  const username = `<@${payload.user.id}>`
-  action = (payload.actions)?payload.actions[0].value:""
-  console.log("payload ->",response_url)
-  console.log(payload);
-  let message ={
-    attachments: [
-      {
-        fallback: "Ey! who is going to have lunch out today?",
-        callback_id: "wo_go_lunch",
-        color: "#3AA3E3",
-        attachment_type: "default",
-        actions:[]
-      }
-    ]
-  }
-  let text="Ey! who is going to have lunch out today?"
-  if(action=="yes" ){
-    text+=`\n:heavy_check_mark: ${username} te hemos apuntado.`
-  }else if(action=="no"){
-    text+=`\n:x: ${username} hoy no te apuntamos.`
-    message.attachments[0].actions.push({
-      name: "goLunch",
-      text: "Now Yes",
-      type: "button",
-      value: "yes"
-    })
-  }else if(action=="join_me"){
-    message.attachments.push()
-  }
-  message.attachments[0].text=text
-  console.log("message",message)
-  Slack.response(response_url, { ...message })
-    .then(r => console.log("then", r.data))
-    .catch(e => console.log("catch", e));
 });
 
 router.post("/event", (req, res, next) => {
@@ -90,7 +121,7 @@ router.post("/event", (req, res, next) => {
   }
 
   const { event } = req.body;
-  console.log(event)
+  console.log(event);
   res.json({
     text: `I'm received the ${event.type} event width this text :"${
       event.text
@@ -99,48 +130,28 @@ router.post("/event", (req, res, next) => {
 });
 
 router.post("/start", (req, res, next) => {
-  console.log("/start");
-  Slack.chat.postMessage({
-      channel: "random",
-      attachments: [
-        {
-          text: "<!channel> Ey! who is going to have lunch out today?",
-          fallback: "Ey! who is going to have lunch out today?",
-          callback_id: "wo_go_lunch",
-          color: "#3AA3E3",
-          attachment_type: "default",
-          actions: [
-            {
-              name: "goLunch",
-              text: "Yes",
-              type: "button",
-              value: "yes"
-            },
-            {
-              name: "goLunch",
-              text: "No",
-              type: "button",
-              value: "no"
-            }
-          ]
-        }
-      ]
+  console.log(req.body)
+  const{channel_id,user_id}=req.body
+  res.status(200).end();
+  gordify
+    .startLunch()
+    .then(r => {
+      console.log("gordify.startlunch", r.data);
+      res.json({ text: `I'm received the /start command` });
     })
-    .then(r =>{
-       console.log("/start", r.data)
-       res.json({ text: `I'm received the /start command` })
-      })
-    .catch(e => console.log("/start", e.data));
-  
+    .catch(e => next({text:e.error,channel:channel_id,user:user_id}));
 });
-router.post("/end", (req, res, next) => {
-  const { command } = req.body;
-  res.json({ text: `I'm received the /end command` });
+router.post("/stop", (req, res, next) => {
+  res.status(200).end();
+  
+  gordify.stopLunch()
+  // const { command } = req.body;
+  // res.json({ text: `I'm received the /stop command` });
 });
 router.post("/config", (req, res, next) => {
   console.log("/config");
-  res.status(200).end()
-  
+  res.status(200).end();
+
   const { trigger_id } = req.body;
   let message = {
     trigger_id,
@@ -157,30 +168,34 @@ router.post("/config", (req, res, next) => {
           placeholder: "Choose channel",
           name: "channel",
           data_source: "channels"
-        },{
+        },
+        {
           type: "text",
           label: "Days to go lunch",
           placeholder: "Days of the week separated by commas",
           name: "days",
           optional: true
-        },{
-          type: "text",
-          label: "Time",
-          placeholder: "Launch time",
-          name: "time",
-          optional: true
-        },{
-          type: "text",
-          label: "Duration",
-          placeholder: "Time to join in hours",
-          name: "duration",
-          optional: true
-        }
+         }
+        //,
+        // {
+        //   type: "text",
+        //   label: "Time",
+        //   placeholder: "Launch time",
+        //   name: "time",
+        //   optional: true
+        // },
+        // {
+        //   type: "text",
+        //   label: "Duration",
+        //   placeholder: "Time to join in hours",
+        //   name: "duration",
+        //   optional: true
+        // }
       ]
     }
   };
-  
-  Slack.dialog("open",message)
+
+  Slack.dialog("open", message)
     .then(r => {
       console.log("open dialog", r.data);
     })
@@ -188,32 +203,3 @@ router.post("/config", (req, res, next) => {
 });
 
 module.exports = router;
-  
-  // axios
-  //   .post("https://slack.com/api/chat.postMessage", {
-  //     channel: "random",
-  //     text: "Ey! who is going to have lunch out today?",
-  //     attachments: [
-  //       {
-  //         fallback: "Ey! who is going to have lunch out today?",
-  //         callback_id: "wo_go_lunch",
-  //         color: "#3AA3E3",
-  //         attachment_type: "default",
-  //         actions: [
-  //           {
-  //             name: "goLunch",
-  //             text: "Yes",
-  //             type: "button",
-  //             value: "yes"
-  //           },
-  //           {
-  //             name: "goLunch",
-  //             text: "No",
-  //             type: "button",
-  //             value: "no"
-  //           }
-  //         ]
-  //       }
-  //     ]
-  // })
-

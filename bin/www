@@ -1,5 +1,17 @@
 const http = require("http");
 let app = require("../app");
+const Slack = require("../helpers/slackMethods");
+
+app.use((err, req, res, next) => {
+  console.log("sending error: ", err);
+  Slack.chat("postEphemeral", {
+    user: err.user,
+    channel: err.channel,
+    text: err.text
+  }).catch(e => console.log(e, err));
+});
 
 let server = http.createServer(app);
-server.listen(process.env.PORT, () => console.log(`Listening on port ${process.env.PORT}`));
+server.listen(process.env.PORT, () =>
+  console.log(`Listening on port ${process.env.PORT}`)
+);

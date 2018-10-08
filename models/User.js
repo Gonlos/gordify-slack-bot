@@ -4,7 +4,7 @@ const Lunch = require("./Lunch");
 
 const userSchema = new Schema(
   {
-    id: String,
+    slackId: String,
     name: String,
     lunches: [{ type: Schema.Types.ObjectId, ref: "Lunch" }],
     leadGroup: Number,

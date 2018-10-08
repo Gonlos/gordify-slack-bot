@@ -7,7 +7,10 @@ const slackBotSchema = new Schema(
     channel: String,
     days: String,
     time: String,
-    duration: String
+    duration: String,
+    currentLunch: String,
+    response_url: String,
+    jobs: [{}]
   },
   {
     timestamps: {
